@@ -1,20 +1,117 @@
-package ACOTSP;
-
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Random;
 import java.util.Scanner;
 
 public class ACO {
 
-	private double[][] ambiente;
+	private double[][] d;
 	private double[][] feromonio;
 	private double[][] dividendosProbabilidades = new double[1][1];
-	private double alfa, beta;
+	private double alfa, beta, Qk;
+	private ArrayList<Formiga> colonia;
+	private int numeroFormigas, numeroIteracoes;
+		
+	public ACO(double alfa, double beta, double qk, int numeroFormigas, int numeroIteracoes) {
+		super();
+		this.alfa = alfa;
+		this.beta = beta;
+		this.Qk = qk;
+		this.numeroFormigas = numeroFormigas;
+		this.numeroIteracoes = numeroIteracoes;
+	}
+
+	private void iniciar() {
+		
+		
+		
+		while(numeroIteracoes-- > 0) {
+			for (int i = 0; i < numeroFormigas; i++) {
+				Formiga f = new Formiga(new int[d.length]);
+				
+				for (int posicao = 0; posicao < f.getSk().length; posicao++) {
+					
+					int cidadeJ = -1;
+					
+					if(posicao == 0 ) {
+						Random r = new Random();						
+						cidadeJ = r.nextInt(f.getSk().length);
+					}
+					else {
+						cidadeJ = this.selecionaCidadeJ(f.getSk()[posicao-1]);
+					}
+					
+					f.setCidade(posicao, cidadeJ);
+					
+				}
+				
+				//Calcular a distancia
+				
+				colonia.add(f);
+			}
+			
+			//Atualizar Feromonio
+			
+		}
+	}
 	
+	private void atualizaFeromomio() {
+		
+		double[][] delta = new double[feromonio.length][feromonio[0].length];
+		
+		for (Formiga formiga : colonia) {
+			deltaFeromomio(formiga, delta);
+		}
+		
+		double p = Math.random();
+		
+		for (int i = 0; i < feromonio.length; i++) {			
+			for (int j = 0; j < feromonio[i].length; j++) {
+				feromonio[i][j] = ((1-p)*feromonio[i][j]) + delta[i][j]; 
+			}			
+		}
+	}
+	
+	//Calcula o delta de feromonio
+	private void deltaFeromomio(Formiga formiga, double[][] delta) {
+		
+		double deltatIJk =  (formiga.getSk().length * Qk) / formiga.getLk();
+		
+		for (int i = 0; i < formiga.getSk().length; i++) {
+			
+			int cidadeI = -1;
+			int cidadeJ = -1;
+			
+			if (i == formiga.getSk().length - 1) {
+				cidadeI = formiga.getSk()[i];
+				cidadeJ = formiga.getSk()[0];
+			}
+			else {
+				cidadeI = formiga.getSk()[i];
+				cidadeJ = formiga.getSk()[i+1];				
+			}
+			
+			delta[cidadeI][cidadeJ] = deltatIJk;			
+		}
+	}
 	
 	//Roleta da escolha cidade
 	private int selecionaCidadeJ(int i){
-		return 0;
+	    double aleatorio = Math.random();
+	    this.somatorio = 0;
+	    this.atualizaSomatorio(i);	    
+	    
+	    int escolhida = -1;
+	    
+	    for (int j = 0; j < d[i].length; j++) {
+	    	if(aleatorio < getProbabilidade(i, j)) {
+	    		escolhida = j;
+	    		break;
+	    	}
+		}
+	    
+		return escolhida;
 	}
 	
 	//probabilidade de estar na cidade i e ir para j
@@ -25,25 +122,25 @@ public class ACO {
 	//somatorio dos dividendos
 	private double somatorio = 0;
 	private void atualizaSomatorio(int i){
-		for (int j = 0; j < ambiente.length; j++) {			
+		for (int j = 0; j < d.length; j++) {			
 			somatorio += dividendoProbCidade(i, j);
 		}
 	}
 	
 	//calcula os dividendos
 	private double dividendoProbCidade(int i, int j){
-		dividendosProbabilidades[i][j] = Math.pow(ambiente[i][j], alfa) * Math.pow(feromonio[i][j], beta);
+		dividendosProbabilidades[i][j] = Math.pow(d[i][j], alfa) * Math.pow(feromonio[i][j], beta);
 		return dividendosProbabilidades[i][j];
 	}
 	
 	//atualiza feromonio
-	private void atualizaFeromonio(int i,  int j, double novoFeromonio){
+	private void setaFeromonio(int i,  int j, double novoFeromonio){
 		this.feromonio[i][j] = novoFeromonio;
 	}
 	
 	//getdistancia
 	private double getDistancia(int i,  int j){
-		return this.ambiente[i][j];
+		return this.d[i][j];
 	}
 		
 	//getferomonio
@@ -51,7 +148,7 @@ public class ACO {
 		return this.feromonio[i][j];
 	}
 		
-	//Realiza aleitura do arquivo do tsp com as distâncias ou coordenadas 
+	//Realiza aleitura do arquivo do tsp com as distÃ¢ncias ou coordenadas 
 	private void iniciarAmbiente(String path) {
 		try {
 
@@ -89,7 +186,7 @@ public class ACO {
 
 			f.close();
 
-			this.ambiente = E;
+			this.d = E;
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -108,45 +205,50 @@ public class ACO {
 
 class Formiga implements Comparable<Formiga> {
 
-	private int fitness = 0;
-	private String cromossomo;
+	private double Lk = 0;
+	private int[] Sk;
 
 	public Formiga() {
+		
 	}
 
-	public Formiga(String cromossomo) {
-		this.cromossomo = cromossomo;
+	public Formiga(int[] Sk) {
+		this.Sk = Sk;
 	}
 
-	public Formiga(int fitness, String cromossomo) {
+	public Formiga(double Lk, int[] Sk) {
 		super();
-		this.fitness = fitness;
-		this.cromossomo = cromossomo;
+		this.Lk = Lk;
+		this.Sk = Sk;
 	}
 
-	public int getFitness() {
-		return fitness;
+	public double getLk() {
+		return Lk;
 	}
 
-	public void setFitness(int fitness) {
-		this.fitness = fitness;
+	public void setLk(double Lk) {
+		this.Lk = Lk;
 	}
 
-	public String getCromossomo() {
-		return cromossomo;
+	public int[] getSk() {
+		return Sk;
 	}
 
-	public void setCromossomo(String cromossomo) {
-		this.cromossomo = cromossomo;
+	public void setCidade(int posicao, int cidade) {
+		this.Sk[posicao] = cidade;
+	}
+	
+	public void setSk(int[] Sk) {
+		this.Sk = Sk;
 	}
 
 	@Override
 	public int compareTo(Formiga outraFormiga) {
 		// TODO Auto-generated method stub
-		if (this.fitness > outraFormiga.getFitness()) {
+		if (this.Lk > outraFormiga.getLk()) {
 			return -1;
 		}
-		if (this.fitness < outraFormiga.getFitness()) {
+		if (this.Lk < outraFormiga.getLk()) {
 			return 1;
 		}
 		return 0;
