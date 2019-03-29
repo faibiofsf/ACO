@@ -1,4 +1,4 @@
-package AGCanonico;
+package ACO;
 
 import java.io.File;
 import java.io.FileNotFoundException;
