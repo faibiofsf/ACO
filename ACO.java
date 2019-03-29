@@ -14,6 +14,7 @@ public class ACO {
 	private int numeroFormigas, numeroIteracoes;
 		
 	public ACO(double alfa, double beta, double qk, int numeroFormigas, int numeroIteracoes) {
+		//teste teste
 		this.alfa = alfa;
 		this.beta = beta;
 		this.Qk = qk;
