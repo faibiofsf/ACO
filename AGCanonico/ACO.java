@@ -1,3 +1,4 @@
+package AGCanonico;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -14,7 +15,6 @@ public class ACO {
 	private int numeroFormigas, numeroIteracoes;
 		
 	public ACO(double alfa, double beta, double qk, int numeroFormigas, int numeroIteracoes) {
-		//teste teste fgdfg
 		this.alfa = alfa;
 		this.beta = beta;
 		this.Qk = qk;
@@ -47,6 +47,7 @@ public class ACO {
 				}
 				
 				//Calcular a distancia
+				
 				
 				colonia.add(f);
 			}
