@@ -50,9 +50,10 @@ public class ACO {
 				feromonio[i][j] = 0.1;
 			}
 		}
-		while (numeroIteracoes-- >= 0) {
-			System.out.println("\n Iteração: " + numeroIteracoes);
-			gravarArqFormigas.printf("\n Iteração: " + this.numeroIteracoes + "\n");
+		int iteracao = 0;
+		while (iteracao++ < numeroIteracoes) {
+			System.out.println("\n Iteração: " + iteracao);
+			gravarArqFormigas.printf("\n Iteração: " + iteracao + "\n");
 			colonia = new ArrayList<Formiga>();
 			for (int k = 0; k < numeroFormigas; k++) {
 				int[] caminhoFormigak = new int[d.length];
@@ -64,9 +65,15 @@ public class ACO {
 				
 				Formiga formiga = new Formiga(caminhoFormigak);
 
-				// Cria a rota da formiga e atualiza a distancia
-				this.criaRota(formiga);
-
+				if(iteracao == 0) {
+					// Cria a rota aleatoria da formiga e atualiza a distancia
+					this.criaRotaAleatoria(formiga);
+				}
+				else {
+					// Cria a rota da formiga e atualiza a distancia
+					this.criaRota(formiga);
+				}
+				
 				//System.out.println(formiga.getLk());
 				
 				if (formiga.getLk() < melhorFormiga.getLk()) {
@@ -89,7 +96,7 @@ public class ACO {
 			
 			colonia.clear();
 			
-			gravarArqMelhorFormigas.printf("\nMelhor Formiga: ");
+			gravarArqMelhorFormigas.printf("Melhor Formiga: ");
 			
 			gravarArqMelhorFormigas.printf(melhorFormiga.getLk()+" : ");
 			
@@ -135,6 +142,20 @@ public class ACO {
 				cidadesSelecionadasK[cidadeJ] = true;
 				// Calcular a distancia entre o elemento na posição anterior e o
 				// elemento inserido na posição atual
+				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][posicao]);
+			}
+		}
+	}
+	
+	private void criaRotaAleatoria(Formiga formiga) {
+		for (int posicao = 0; posicao < formiga.getSk().length; posicao++) {
+
+			int cidadeJ = -1;
+			Random r = new Random();
+			cidadeJ = r.nextInt(formiga.getSk().length);
+			formiga.setCidade(posicao, cidadeJ);
+			cidadesSelecionadasK[cidadeJ] = true;
+			if(posicao > 0) {
 				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][posicao]);
 			}
 		}
