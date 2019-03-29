@@ -1,4 +1,4 @@
-package ACO;
+package Algoritmo;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -113,7 +113,7 @@ public class ACO {
 
 		int escolhida = -1;
 
-		//Falta fazer caminhar só pelas que nao foram escolhidas entende
+		//Falta fazer caminhar só pelas que nao foram escolhidas entende rsrs
 		for (int j = 0; j < d[i].length; j++) {
 			if (aleatorio < getProbabilidade(i, j)) {
 				escolhida = j;
