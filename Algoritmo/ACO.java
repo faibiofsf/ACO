@@ -50,7 +50,7 @@ public class ACO {
 		melhorFormiga = new Formiga();
 		for (int i = 0; i < feromonio.length; i++) {
 			for (int j = 0; j < feromonio.length; j++) {
-				feromonio[i][j] = 0.1;
+				feromonio[i][j] = 0.001;
 			}
 		}
 		int iteracao = 0;
@@ -76,27 +76,13 @@ public class ACO {
 
 				Formiga formiga = new Formiga(caminhoFormigak);
 
-				if (iteracao == 0) {
+				if (iteracao < (int)(this.numeroIteracoes/10)) {
 					// Cria a rota aleatoria da formiga e atualiza a distancia
 					this.criaRotaAleatoria(formiga);
 				} else {
 					// Cria a rota da formiga e atualiza a distancia
 					this.criaRota(formiga);
 				}
-
-				// System.out.println(formiga.getLk());
-
-//				if (formiga.getLk() < melhorFormiga.getLk()) {
-//					melhorFormiga.setSk(formiga.getSk());
-//					melhorFormiga.setLk(formiga.getLk());
-//				}
-
-//				gravarArqFormigas.printf("Formiga: " + k + " : ");
-//
-//				for (int j = 0; j < formiga.getSk().length; j++) {
-//					gravarArqFormigas.printf(formiga.getSk()[j] + " ");
-//				}
-//				gravarArqFormigas.printf("\n");
 
 				colonia.add(formiga);
 			}
@@ -106,14 +92,6 @@ public class ACO {
 
 			// Atualizar Feromonio
 			this.atualizaFeromomio();
-
-			
-//			gravarArqMelhorFormigas.printf("Melhor Formiga: ");
-//			gravarArqMelhorFormigas.printf(melhorFormiga.getLk() + " : ");
-//			for (int j = 0; j < melhorFormiga.getSk().length; j++) {
-//				gravarArqMelhorFormigas.printf(melhorFormiga.getSk()[j] + " ");
-//			}
-//			gravarArqMelhorFormigas.printf("\n");
 			
 			textoMelhorFormiga += "Melhor Formiga: ";
 			textoMelhorFormiga += melhorFormiga.getLk() + " : ";
@@ -175,7 +153,7 @@ public class ACO {
 				this._aVisitar.remove(new Integer(cidadeJ));
 				// Calcular a distancia entre o elemento na posição anterior e o
 				// elemento inserido na posição atual
-				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][posicao]);
+				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][cidadeJ]);
 			}
 		}
 	}
@@ -247,14 +225,6 @@ public class ACO {
 
 		int escolhida = -1;
 
-//		//Seleciona somente as que nao foram escolhidas
-		/*
-		 * double somatorioProbabilidades = 0.0; for (int j = 0; j < d[i].length; j++) {
-		 * if(cidadesSelecionadasK[j] == false) { somatorioProbabilidades +=
-		 * getProbabilidade(i, j); if (aleatorio < somatorioProbabilidades) { escolhida
-		 * = j; break; } } }
-		 */
-
 		// Seleciona somente as que nao foram escolhidas
 
 		double somatorioProbabilidades = 0.0;
@@ -286,11 +256,7 @@ public class ACO {
 
 	private void atualizaSomatorio(int i) {
 		somatorio = 0;
-//		for (int j = 0; j < d.length; j++) {
-//			if (cidadesSelecionadasK[j] == false) {
-//				somatorio += dividendoProbCidade(i, j);
-//			}
-//		}
+
 		
 		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
 		while (!aVisitar.isEmpty()) {
@@ -385,7 +351,7 @@ public class ACO {
 		String entrada = "..\\ACO\\src\\Testes\\brazil58.tsp";
 		String saidaFormigas = "..\\ACO\\src\\Testes\\saidaFormigas.txt";
 		String melhorFormiga = "..\\ACO\\src\\Testes\\saidaMelhorFormiga.txt";
-		ACO aco = new ACO(1, 6, 0.001, 0.2, 58, 2000, entrada, saidaFormigas, melhorFormiga);
+		ACO aco = new ACO(1, 6, 0.1, 0.2, 200, 2000, entrada, saidaFormigas, melhorFormiga);
 		aco.iniciar();
 	}
 
