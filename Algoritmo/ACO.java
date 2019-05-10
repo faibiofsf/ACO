@@ -155,7 +155,8 @@ public class ACO {
 				cidadesSelecionadasK[cidadeJ] = true;
 				this._aVisitar.remove(cidadeJ);
 			} else {
-				cidadeJ = this.selecionaCidadeJ(formiga, posicao);
+				//cidadeJ = this.selecionaCidadeJRoleta(formiga, posicao);
+				cidadeJ = this.selecionaCidadeJTorneio(formiga, posicao);
 				formiga.setCidade(posicao, cidadeJ);
 				cidadesSelecionadasK[cidadeJ] = true;
 				this._aVisitar.remove(new Integer(cidadeJ));
@@ -225,7 +226,7 @@ public class ACO {
 	 * @param posicao
 	 * @return
 	 */
-	private int selecionaCidadeJ(Formiga formiga, int posicao) {
+	private int selecionaCidadeJRoleta(Formiga formiga, int posicao) {
 		int i = formiga.getSk()[posicao - 1];
 		double aleatorio = random.nextDouble();
 		this.atualizaSomatorio(i);
@@ -246,6 +247,48 @@ public class ACO {
 
 		}
 
+		if (escolhida == -1) {
+			System.out.println(escolhida);
+		}
+
+		return escolhida;
+	}
+	
+	private int selecionaCidadeJTorneio(Formiga formiga, int posicao) {
+		int i = formiga.getSk()[posicao - 1];
+		//double aleatorio = random.nextDouble();
+		//this.atualizaSomatorio(i);
+
+		int escolhida = -1;
+
+		// Seleciona somente as que nao foram escolhidas
+
+		double somatorioProbabilidades = 0.0;
+		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
+		ArrayList<Integer> aEscolherAleatorio = new ArrayList<Integer>();
+		int tamanhoAVisitar = aVisitar.size();
+		//System.out.println(tamanhoAVisitar);
+		while (aEscolherAleatorio.size() < 4 && aEscolherAleatorio.size() < tamanhoAVisitar) {
+			int j = (int) aVisitar.remove(random.nextInt(aVisitar.size()));			
+			aEscolherAleatorio.add(j);
+			//System.out.print(aEscolherAleatorio.size() + "\t");
+			//System.out.println(aVisitar.size());
+		}
+
+		//double feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(0));
+		double dividendo = this.dividendoProbCidade(i, aEscolherAleatorio.get(0));
+		
+		escolhida = aEscolherAleatorio.get(0);
+		
+		for (int j = 0; j < aEscolherAleatorio.size(); j++) {
+			//if(feromonioC > this.getFeromonio(i, aEscolherAleatorio.get(j))) {
+			if(dividendo > this.getFeromonio(i, aEscolherAleatorio.get(j))) {
+				//feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(j));
+				dividendo = this.getFeromonio(i, aEscolherAleatorio.get(j));
+				escolhida = aEscolherAleatorio.get(j);
+			}
+		}
+		
 		if (escolhida == -1) {
 			System.out.println(escolhida);
 		}
@@ -358,7 +401,7 @@ public class ACO {
 		String entrada = "..\\ACO\\src\\Testes\\brazil58.tsp";
 		String saidaFormigas = "..\\ACO\\src\\Testes\\saidaFormigas.txt";
 		String melhorFormiga = "..\\ACO\\src\\Testes\\saidaMelhorFormiga.txt";
-		ACO aco = new ACO(1, 6, 0.1, 0.2, 20, 200, entrada, saidaFormigas, melhorFormiga);
+		ACO aco = new ACO(1, 6, 0.1, 0.2, 200, 20000, entrada, saidaFormigas, melhorFormiga);
 		aco.iniciar();
 	}
 
