@@ -23,6 +23,7 @@ public class ACO {
 	boolean[] cidadesSelecionadasK;
 	private FileWriter arqFormigas, arqMelhorFormigas;
 	private PrintWriter gravarArqFormigas, gravarArqMelhorFormigas;
+	private Random random;
 
 	public ACO(double alfa, double beta, double qk, double ro, int numeroFormigas, int numeroIteracoes, String entrada,
 			String saidaFormigas, String saidaMelhorFormiga) {
@@ -44,6 +45,7 @@ public class ACO {
 		}
 		this.gravarArqFormigas = new PrintWriter(arqFormigas);
 		this.gravarArqMelhorFormigas = new PrintWriter(arqMelhorFormigas);
+		random = new Random(12345);
 	}
 
 	private void iniciar() {
@@ -148,8 +150,7 @@ public class ACO {
 			int cidadeJ = -1;
 
 			if (posicao == 0) {
-				Random r = new Random();
-				cidadeJ = r.nextInt(formiga.getSk().length);
+				cidadeJ = random.nextInt(formiga.getSk().length);
 				formiga.setCidade(posicao, cidadeJ);
 				cidadesSelecionadasK[cidadeJ] = true;
 				this._aVisitar.remove(cidadeJ);
@@ -169,8 +170,7 @@ public class ACO {
 		for (int posicao = 0; posicao < formiga.getSk().length; posicao++) {
 
 			int cidadeJ = -1;
-			Random r = new Random();
-			cidadeJ = r.nextInt(formiga.getSk().length);
+			cidadeJ = random.nextInt(formiga.getSk().length);
 			formiga.setCidade(posicao, cidadeJ);
 			cidadesSelecionadasK[cidadeJ] = true;
 			if (posicao > 0) {
@@ -227,7 +227,7 @@ public class ACO {
 	 */
 	private int selecionaCidadeJ(Formiga formiga, int posicao) {
 		int i = formiga.getSk()[posicao - 1];
-		double aleatorio = Math.random();
+		double aleatorio = random.nextDouble();
 		this.atualizaSomatorio(i);
 
 		int escolhida = -1;
@@ -358,7 +358,7 @@ public class ACO {
 		String entrada = "..\\ACO\\src\\Testes\\brazil58.tsp";
 		String saidaFormigas = "..\\ACO\\src\\Testes\\saidaFormigas.txt";
 		String melhorFormiga = "..\\ACO\\src\\Testes\\saidaMelhorFormiga.txt";
-		ACO aco = new ACO(1, 6, 0.1, 0.2, 200, 2000, entrada, saidaFormigas, melhorFormiga);
+		ACO aco = new ACO(1, 6, 0.1, 0.2, 20, 200, entrada, saidaFormigas, melhorFormiga);
 		aco.iniciar();
 	}
 
