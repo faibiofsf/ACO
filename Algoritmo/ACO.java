@@ -54,12 +54,12 @@ public class ACO {
 			}
 		}
 		int iteracao = 0;
-		String textoMelhorFormiga = "";
-		String textoMelhorFormigaPopulacao = "";
+		String textoMelhorFormiga[] = new String[numeroIteracoes+1];
+		String textoMelhorFormigaPopulacao[] = new String[numeroIteracoes+1];
 		
-		while (iteracao++ < numeroIteracoes) {
-			System.out.println("\n Iteração: " + iteracao);
-			//gravarArqFormigas.printf("\n Iteração: " + iteracao + "\n");
+		while (iteracao < numeroIteracoes) {
+			System.out.println("\n IteraÃ§Ã£o: " + iteracao);
+			//gravarArqFormigas.printf("\n IteraÃ§Ã£o: " + iteracao + "\n");
 			colonia = new ArrayList<Formiga>();
 			for (int k = 0; k < numeroFormigas; k++) {
 				int[] caminhoFormigak = new int[d.length];
@@ -87,34 +87,41 @@ public class ACO {
 				colonia.add(formiga);
 			}
 			
-			//Ranqueia a população 
+			//Ranqueia a populaÃ§Ã£o 
 			this.rank();
 
 			// Atualizar Feromonio
 			this.atualizaFeromomio();
 			
-			textoMelhorFormiga += "Melhor Formiga: ";
-			textoMelhorFormiga += melhorFormiga.getLk() + " : ";
+			String mFormiga = "Melhor Formiga: ";
+			mFormiga += melhorFormiga.getLk() + " : ";
 			for (int j = 0; j < melhorFormiga.getSk().length; j++) {
-				textoMelhorFormiga += melhorFormiga.getSk()[j] + " ";
+				mFormiga += melhorFormiga.getSk()[j] + " ";
 			}
-			textoMelhorFormiga += "\n";
 			
+			textoMelhorFormiga[iteracao] = mFormiga;
 			
-			textoMelhorFormigaPopulacao += "Melhor Formiga: ";
-			textoMelhorFormigaPopulacao += colonia.get(0).getLk() + " : ";
+			String mFormigaPopulacao = "Melhor Formiga: ";
+			mFormigaPopulacao += colonia.get(0).getLk() + " : ";
 			for (int j = 0; j < colonia.get(0).getSk().length; j++) {
-				textoMelhorFormigaPopulacao += colonia.get(0).getSk()[j] + " ";
+				mFormigaPopulacao += colonia.get(0).getSk()[j] + " ";
 			}
-			textoMelhorFormigaPopulacao += "\n";
+			textoMelhorFormigaPopulacao[iteracao] = mFormigaPopulacao;
 			
 			colonia.clear();
+			
+			iteracao++;
 
 		}
 		
-		gravarArqMelhorFormigas.printf(textoMelhorFormiga);
 		
-		gravarArqFormigas.printf(textoMelhorFormigaPopulacao);
+		for (String mFormiga : textoMelhorFormiga) {
+			gravarArqMelhorFormigas.println(mFormiga);
+		}
+		
+		for (String mFormigaPop : textoMelhorFormigaPopulacao) {
+			gravarArqFormigas.println(mFormigaPop);
+		}
 
 		for (int i = 0; i < feromonio.length; i++) {
 			for (int j = 0; j < feromonio.length; j++) {
@@ -151,8 +158,8 @@ public class ACO {
 				formiga.setCidade(posicao, cidadeJ);
 				cidadesSelecionadasK[cidadeJ] = true;
 				this._aVisitar.remove(new Integer(cidadeJ));
-				// Calcular a distancia entre o elemento na posição anterior e o
-				// elemento inserido na posição atual
+				// Calcular a distancia entre o elemento na posiÃ§Ã£o anterior e o
+				// elemento inserido na posiÃ§Ã£o atual
 				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][cidadeJ]);
 			}
 		}
@@ -288,7 +295,7 @@ public class ACO {
 	}
 
 	
-    //Ranqueamento da populaÃ§Ã£o
+    //Ranqueamento da populaÃƒÂ§ÃƒÂ£o
 	public void rank() {
 
 		Collections.sort(this.colonia);
@@ -299,7 +306,7 @@ public class ACO {
 	}
 
 	
-	// Realiza aleitura do arquivo do tsp com as distÃ¢ncias ou coordenadas
+	// Realiza aleitura do arquivo do tsp com as distÃƒÂ¢ncias ou coordenadas
 	private void iniciarAmbiente(String path) {
 		try {
 
