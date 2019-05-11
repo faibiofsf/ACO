@@ -56,12 +56,12 @@ public class ACO {
 			}
 		}
 		int iteracao = 0;
-		String textoMelhorFormiga[] = new String[numeroIteracoes+1];
-		String textoMelhorFormigaPopulacao[] = new String[numeroIteracoes+1];
+		String textoMelhorFormiga[] = new String[numeroIteracoes];
+		String textoMelhorFormigaPopulacao[] = new String[numeroIteracoes];
 		
 		while (iteracao < numeroIteracoes) {
-			System.out.println("\n IteraÃ§Ã£o: " + iteracao);
-			//gravarArqFormigas.printf("\n IteraÃ§Ã£o: " + iteracao + "\n");
+			System.out.println("\n IteraÃƒÂ§ÃƒÂ£o: " + iteracao);
+			//gravarArqFormigas.printf("\n IteraÃƒÂ§ÃƒÂ£o: " + iteracao + "\n");
 			colonia = new ArrayList<Formiga>();
 			for (int k = 0; k < numeroFormigas; k++) {
 				int[] caminhoFormigak = new int[d.length];
@@ -89,7 +89,7 @@ public class ACO {
 				colonia.add(formiga);
 			}
 			
-			//Ranqueia a populaÃ§Ã£o 
+			//Ranqueia a populaÃƒÂ§ÃƒÂ£o 
 			this.rank();
 
 			// Atualizar Feromonio
@@ -116,6 +116,7 @@ public class ACO {
 
 		}
 		
+		System.out.println(textoMelhorFormiga[textoMelhorFormiga.length-1]);
 		
 		for (String mFormiga : textoMelhorFormiga) {
 			gravarArqMelhorFormigas.println(mFormiga);
@@ -160,8 +161,8 @@ public class ACO {
 				formiga.setCidade(posicao, cidadeJ);
 				cidadesSelecionadasK[cidadeJ] = true;
 				this._aVisitar.remove(new Integer(cidadeJ));
-				// Calcular a distancia entre o elemento na posiÃ§Ã£o anterior e o
-				// elemento inserido na posiÃ§Ã£o atual
+				// Calcular a distancia entre o elemento na posiÃƒÂ§ÃƒÂ£o anterior e o
+				// elemento inserido na posiÃƒÂ§ÃƒÂ£o atual
 				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][cidadeJ]);
 			}
 		}
@@ -267,12 +268,11 @@ public class ACO {
 		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
 		ArrayList<Integer> aEscolherAleatorio = new ArrayList<Integer>();
 		int tamanhoAVisitar = aVisitar.size();
+		int tamanhoTorneio = (aVisitar.size()*0.1) < 4 ? 4 : (int) (aVisitar.size()*0.1);
 		//System.out.println(tamanhoAVisitar);
-		while (aEscolherAleatorio.size() < 4 && aEscolherAleatorio.size() < tamanhoAVisitar) {
+		while (aEscolherAleatorio.size() < tamanhoTorneio && aEscolherAleatorio.size() < tamanhoAVisitar) {
 			int j = (int) aVisitar.remove(random.nextInt(aVisitar.size()));			
 			aEscolherAleatorio.add(j);
-			//System.out.print(aEscolherAleatorio.size() + "\t");
-			//System.out.println(aVisitar.size());
 		}
 
 		//double feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(0));
@@ -282,9 +282,9 @@ public class ACO {
 		
 		for (int j = 0; j < aEscolherAleatorio.size(); j++) {
 			//if(feromonioC > this.getFeromonio(i, aEscolherAleatorio.get(j))) {
-			if(dividendo > this.getFeromonio(i, aEscolherAleatorio.get(j))) {
+			if(dividendo > this.dividendoProbCidade(i, aEscolherAleatorio.get(j))) {
 				//feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(j));
-				dividendo = this.getFeromonio(i, aEscolherAleatorio.get(j));
+				dividendo = this.dividendoProbCidade(i, aEscolherAleatorio.get(j));
 				escolhida = aEscolherAleatorio.get(j);
 			}
 		}
@@ -338,7 +338,7 @@ public class ACO {
 	}
 
 	
-    //Ranqueamento da populaÃƒÂ§ÃƒÂ£o
+    //Ranqueamento da populaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o
 	public void rank() {
 
 		Collections.sort(this.colonia);
@@ -349,7 +349,7 @@ public class ACO {
 	}
 
 	
-	// Realiza aleitura do arquivo do tsp com as distÃƒÂ¢ncias ou coordenadas
+	// Realiza aleitura do arquivo do tsp com as distÃƒÆ’Ã‚Â¢ncias ou coordenadas
 	private void iniciarAmbiente(String path) {
 		try {
 
