@@ -19,23 +19,25 @@ public class ACO {
 	private ArrayList<Formiga> colonia;
 	private ArrayList<Integer> _aVisitar;
 	private Formiga melhorFormiga;
-	private int numeroFormigas, numeroIteracoes;
+	private int numeroFormigas, numeroIteracoes, selecao;
 	boolean[] cidadesSelecionadasK;
 	private FileWriter arqPopulacao, arqMelhorGlobal;
 	private PrintWriter gravarArqPopulacao, gravarArqMelhorGlobal;
 	private Random random;
 
-	public ACO(double alfa, double beta, double qk, double ro, int numeroFormigas, int numeroIteracoes, String entrada,
+	public ACO(double alfa, double beta, double qk, double ro, int numeroFormigas, int numeroIteracoes, int selecao, String entrada,
 			String saidaPopulacao, String saidaMelhorGlobal) {
-		if(entrada.contains("brazil27")){
-			this.iniciarAmbienteBrazil26(entrada);
-		}else this.iniciarAmbiente(entrada);
+		if (entrada.contains("brazil27")) {
+			this.iniciarAmbienteBrazil27(entrada);
+		} else
+			this.iniciarAmbiente(entrada);
 		this.alfa = alfa;
 		this.beta = beta;
 		this.Qk = qk;
 		this.ro = ro;
 		this.numeroFormigas = numeroFormigas;
 		this.numeroIteracoes = numeroIteracoes;
+		this.selecao = selecao;
 		this.feromonio = new double[d.length][d.length];
 		this.dividendosProbabilidades = new double[d.length][d.length];
 		try {
@@ -62,13 +64,12 @@ public class ACO {
 		String textoMelhorFormigaPopulacao[] = new String[numeroIteracoes];
 		String textoMediaPopulacao[] = new String[numeroIteracoes];
 		String textoPiorFormigaPopulacao[] = new String[numeroIteracoes];
-		
+
 		while (iteracao < numeroIteracoes) {
-			System.out.println("\n IteraÃƒÂ§ÃƒÂ£o: " + iteracao);
-			//gravarArqFormigas.printf("\n IteraÃƒÂ§ÃƒÂ£o: " + iteracao + "\n");
+			
 			colonia = new ArrayList<Formiga>();
 			for (int k = 0; k < numeroFormigas; k++) {
-				int[] caminhoFormigak = new int[d.length+1];
+				int[] caminhoFormigak = new int[d.length + 1];
 				for (int j = 0; j < caminhoFormigak.length; j++) {
 					caminhoFormigak[j] = -1;
 				}
@@ -82,7 +83,7 @@ public class ACO {
 
 				Formiga formiga = new Formiga(caminhoFormigak);
 
-				if (iteracao < (int)(this.numeroIteracoes/10)) {
+				if (iteracao < (int) (this.numeroIteracoes / 10)) {
 					// Cria a rota aleatoria da formiga e atualiza a distancia
 					this.criaRotaAleatoria(formiga);
 				} else {
@@ -92,57 +93,52 @@ public class ACO {
 
 				colonia.add(formiga);
 			}
-			
-			//Ranqueia a populacao 
+
+			// Ranqueia a populaÃ§Ã£o
 			this.rank();
-			
+
 			// Atualizar Feromonio
 			this.atualizaFeromomio();
-			
-			//Melhor Formiga total			
-			String mFormiga = "Melhor Formiga: ";
-			mFormiga += melhorFormiga.getLk() + " : ";
-			for (int j = 0; j < melhorFormiga.getSk().length; j++) {
-				mFormiga += melhorFormiga.getSk()[j] + " ";
-			}			
-			textoMelhorGlobal[iteracao] = mFormiga;
-			
-			//Media de fitness da colonia
+
+			textoMelhorGlobal[iteracao] = iteracao+"\t"+melhorFormiga.getLk();
+
+			// Media de fitness da colonia
 			double fitnessMedio = 0.0;
 			for (Formiga formiga : colonia) {
 				fitnessMedio += formiga.getLk();
 			}
-			fitnessMedio = fitnessMedio/colonia.size();
-			textoMediaPopulacao[iteracao] = fitnessMedio+"";			
-			
-			//Melhor Formiga colonia
-			textoMelhorFormigaPopulacao[iteracao] = colonia.get(0).getLk()+"";
-			
-			//Pior Formiga colonia
-			textoPiorFormigaPopulacao[iteracao] = colonia.get(colonia.size()-1).getLk()+"";
-			
+			fitnessMedio = fitnessMedio / colonia.size();
+			textoMediaPopulacao[iteracao] = String.format("%.2f", fitnessMedio);
+
+			// Melhor Formiga colonia
+			textoMelhorFormigaPopulacao[iteracao] = colonia.get(0).getLk() + "";
+
+			// Pior Formiga colonia
+			textoPiorFormigaPopulacao[iteracao] = String.format("%.2f", colonia.get(colonia.size() - 1).getLk());
+
 			colonia.clear();
-			
+
 			iteracao++;
 
 		}
-		
-		System.out.println(textoMelhorGlobal[textoMelhorGlobal.length-1]);
-		
+
+		System.out.println(textoMelhorGlobal[textoMelhorGlobal.length - 1]);
+
 		for (String mFormiga : textoMelhorGlobal) {
 			gravarArqMelhorGlobal.println(mFormiga);
 		}
-		
-		for (int i = 0; i < textoMelhorFormigaPopulacao.length; i++) {
-			gravarArqPopulacao.println(textoMelhorFormigaPopulacao[i] + "\t" + textoMediaPopulacao[i] + "\t" + textoPiorFormigaPopulacao[i]);
-		}
 
+		for (int i = 0; i < textoMelhorFormigaPopulacao.length; i++) {
+			gravarArqPopulacao.println(i+"\t"+textoMelhorFormigaPopulacao[i] + "\t" + textoMediaPopulacao[i] + "\t"
+					+ textoPiorFormigaPopulacao[i]);
+		}
+/*
 		for (int i = 0; i < feromonio.length; i++) {
 			for (int j = 0; j < feromonio.length; j++) {
 				gravarArqPopulacao.printf(feromonio[i][j] + "\t");
 			}
 			gravarArqPopulacao.printf("\n");
-		}
+		}*/
 
 		try {
 			gravarArqPopulacao.close();
@@ -157,41 +153,45 @@ public class ACO {
 	}
 
 	private void criaRota(Formiga formiga) {
-		for (int posicao = 0; posicao < formiga.getSk().length-1; posicao++) {
+		for (int posicao = 0; posicao < formiga.getSk().length - 1; posicao++) {
 
 			int cidadeJ = -1;
 
 			if (posicao == 0) {
-				cidadeJ = random.nextInt(this._aVisitar.size());
+				cidadeJ = this._aVisitar.get(random.nextInt(this._aVisitar.size()));;
 				formiga.setCidade(posicao, cidadeJ);
 				cidadesSelecionadasK[cidadeJ] = true;
 				this._aVisitar.remove(new Integer(cidadeJ));
-				
 			} else {
-				cidadeJ = this.selecionaCidadeJRoleta(formiga, posicao);
-				//cidadeJ = this.selecionaCidadeJTorneio(formiga, posicao);
+				if(this.selecao == 0){
+					cidadeJ = this.selecionaCidadeJRoleta(formiga, posicao);
+				}
+				else if(this.selecao == 1){
+					cidadeJ = this.selecionaCidadeJTorneio(formiga, posicao);
+				}
+				
 				formiga.setCidade(posicao, cidadeJ);
 				cidadesSelecionadasK[cidadeJ] = true;
 				this._aVisitar.remove(new Integer(cidadeJ));
-				// Calcular a distancia entre o elemento na posiÃƒÂ§ÃƒÂ£o anterior e o
-				// elemento inserido na posiÃƒÂ§ÃƒÂ£o atual
+				// Calcular a distancia entre o elemento na posiÃ§Ã£o
+				// anterior e o
+				// elemento inserido na posiÃ§Ã£o atual
 				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][cidadeJ]);
 			}
 		}
-		
-		formiga.setCidade(formiga.getSk().length-1, formiga.getSk()[0]);
-		int ultima = formiga.getSk()[formiga.getSk().length-2];
-		int primeira = formiga.getSk()[formiga.getSk().length-1];
+
+		formiga.setCidade(formiga.getSk().length - 1, formiga.getSk()[0]);
+		int ultima = formiga.getSk()[formiga.getSk().length - 2];
+		int primeira = formiga.getSk()[formiga.getSk().length - 1];
 		double distancia_ultima_primeira = d[ultima][primeira];
 		formiga.setLk(formiga.getLk() + distancia_ultima_primeira);
-		
 	}
 
 	private void criaRotaAleatoria(Formiga formiga) {
-		for (int posicao = 0; posicao < formiga.getSk().length-1; posicao++) {
+		for (int posicao = 0; posicao < formiga.getSk().length - 1; posicao++) {
 
 			int cidadeJ = -1;
-			cidadeJ = random.nextInt(this._aVisitar.size());
+			cidadeJ = this._aVisitar.get(random.nextInt(this._aVisitar.size()));
 			formiga.setCidade(posicao, cidadeJ);
 			cidadesSelecionadasK[cidadeJ] = true;
 			this._aVisitar.remove(new Integer(cidadeJ));
@@ -199,10 +199,10 @@ public class ACO {
 				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][posicao]);
 			}
 		}
-		
-		formiga.setCidade(formiga.getSk().length-1, formiga.getSk()[0]);
-		int ultima = formiga.getSk()[formiga.getSk().length-2];
-		int primeira = formiga.getSk()[formiga.getSk().length-1];
+
+		formiga.setCidade(formiga.getSk().length - 1, formiga.getSk()[0]);
+		int ultima = formiga.getSk()[formiga.getSk().length - 2];
+		int primeira = formiga.getSk()[formiga.getSk().length - 1];
 		double distancia_ultima_primeira = d[ultima][primeira];
 		formiga.setLk(formiga.getLk() + distancia_ultima_primeira);
 	}
@@ -266,7 +266,8 @@ public class ACO {
 		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
 		while (!aVisitar.isEmpty()) {
 			int j = (int) aVisitar.remove(0);
-			somatorioProbabilidades += getProbabilidade(i, j);
+			double prob = getProbabilidade(i, j);
+			somatorioProbabilidades += prob;
 			if (aleatorio < somatorioProbabilidades) {
 				escolhida = j;
 				break;
@@ -280,11 +281,11 @@ public class ACO {
 
 		return escolhida;
 	}
-	
+
 	private int selecionaCidadeJTorneio(Formiga formiga, int posicao) {
 		int i = formiga.getSk()[posicao - 1];
-		//double aleatorio = random.nextDouble();
-		//this.atualizaSomatorio(i);
+		// double aleatorio = random.nextDouble();
+		// this.atualizaSomatorio(i);
 
 		int escolhida = -1;
 
@@ -294,27 +295,28 @@ public class ACO {
 		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
 		ArrayList<Integer> aEscolherAleatorio = new ArrayList<Integer>();
 		int tamanhoAVisitar = aVisitar.size();
-		int tamanhoTorneio = (aVisitar.size()*0.1) < 4 ? 4 : (int) (aVisitar.size()*0.1);
-		//System.out.println(tamanhoAVisitar);
+		int tamanhoTorneio = (aVisitar.size() * 0.1) < 4 ? 4 : (int) (aVisitar.size() * 0.1);
+		// System.out.println(tamanhoAVisitar);
 		while (aEscolherAleatorio.size() < tamanhoTorneio && aEscolherAleatorio.size() < tamanhoAVisitar) {
-			int j = (int) aVisitar.remove(random.nextInt(aVisitar.size()));			
+			int j = (int) aVisitar.remove(random.nextInt(aVisitar.size()));
 			aEscolherAleatorio.add(j);
 		}
 
-		//double feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(0));
+		// double feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(0));
 		double dividendo = this.dividendoProbCidade(i, aEscolherAleatorio.get(0));
-		
+
 		escolhida = aEscolherAleatorio.get(0);
-		
+
 		for (int j = 0; j < aEscolherAleatorio.size(); j++) {
-			//if(feromonioC > this.getFeromonio(i, aEscolherAleatorio.get(j))) {
-			if(dividendo > this.dividendoProbCidade(i, aEscolherAleatorio.get(j))) {
-				//feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(j));
+			// if(feromonioC > this.getFeromonio(i, aEscolherAleatorio.get(j)))
+			// {
+			if (dividendo > this.dividendoProbCidade(i, aEscolherAleatorio.get(j))) {
+				// feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(j));
 				dividendo = this.dividendoProbCidade(i, aEscolherAleatorio.get(j));
 				escolhida = aEscolherAleatorio.get(j);
 			}
 		}
-		
+
 		if (escolhida == -1) {
 			System.out.println(escolhida);
 		}
@@ -333,13 +335,12 @@ public class ACO {
 	private void atualizaSomatorio(int i) {
 		somatorio = 0;
 
-		
 		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
 		while (!aVisitar.isEmpty()) {
 			int j = (int) aVisitar.remove(0);
 			somatorio += dividendoProbCidade(i, j);
 		}
-		
+
 	}
 
 	// calcula os dividendos
@@ -363,19 +364,18 @@ public class ACO {
 		return this.feromonio[i][j];
 	}
 
-	
-    //Ranqueamento da populaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o
+	// Ranqueamento da populaÃƒÂ§ÃƒÂ£o
 	public void rank() {
 
 		Collections.sort(this.colonia);
-		
-		if (this.melhorFormiga.getLk() > this.colonia.get(0).getLk()){
+
+		if (this.melhorFormiga.getLk() > this.colonia.get(0).getLk()) {
 			this.melhorFormiga = new Formiga(this.colonia.get(0).getLk(), this.colonia.get(0).getSk());
 		}
 	}
 
-	
-	// Realiza aleitura do arquivo do tsp com as distÃƒÆ’Ã‚Â¢ncias
+	// Realiza aleitura do arquivo do tsp com as distÃƒÂ¢ncias ou
+	// coordenadas
 	private void iniciarAmbiente(String path) {
 		try {
 
@@ -403,7 +403,6 @@ public class ACO {
 				String[] linha = s.split(" ");
 				int j = i + 1;
 				for (int z = 0; z < linha.length; z++) {
-					
 					E[i][j] = Double.parseDouble(linha[z]);
 					E[j][i] = Double.parseDouble(linha[z]);
 					j++;
@@ -422,69 +421,102 @@ public class ACO {
 		}
 
 	}
-	
-	// Realiza aleitura do arquivo do tsp com as distÃƒÆ’Ã‚Â¢ncias
-		private void iniciarAmbienteBrazil26(String path) {
-			try {
 
-				double[][] E;
+	// Realiza aleitura do arquivo do tsp com as distÃƒÂ¢ncias
+	private void iniciarAmbienteBrazil27(String path) {
+		try {
 
-				int dimensao = 0;
-				Scanner f = new Scanner(new File(path));
-				String s = f.nextLine();
+			double[][] E;
 
-				while (!s.contains("DIMENSION: ")) {
-					s = f.nextLine();
-				}
-				dimensao = Integer.parseInt(s.split(" ")[1]);
+			int dimensao = 0;
+			Scanner f = new Scanner(new File(path));
+			String s = f.nextLine();
 
-				E = new double[dimensao][dimensao];
-
-				while (!s.contains("EDGE_WEIGHT_SECTION")) {
-					s = f.nextLine();
-				}
-
-				int i = 0;
+			while (!s.contains("DIMENSION: ")) {
 				s = f.nextLine();
-				while (f.hasNext() && (!s.equals("EOF") || !s.equals("eof"))) {
+			}
+			dimensao = Integer.parseInt(s.split(" ")[1]);
 
-					String[] linha = s.split(" ");
-					for (int z = 0; z < linha.length; z++) {
-						if(linha[z].contentEquals("Inf")) {
-							E[i][z] = 1000000000;
-						}else
-							E[i][z] = Double.parseDouble(linha[z]);
-						
-					}
-					i++;
-					s = f.nextLine();
-				}
+			E = new double[dimensao][dimensao];
 
-				f.close();
-
-				this.d = E;
-				
-				for (int j = 0; j < E.length; j++) {
-					for (int j2 = 0; j2 < E.length; j2++) {
-						System.out.print(E[j][j2]+" ");
-					}
-					System.out.println(" ");
-				}
-
-			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			while (!s.contains("EDGE_WEIGHT_SECTION")) {
+				s = f.nextLine();
 			}
 
+			int i = 0;
+			s = f.nextLine();
+			while (f.hasNext() && (!s.equals("EOF") || !s.equals("eof"))) {
+
+				String[] linha = s.split(" ");
+				for (int z = 0; z < linha.length; z++) {
+					if (linha[z].contentEquals("Inf")) {
+						E[i][z] = 1000000000;
+					} else
+						E[i][z] = Double.parseDouble(linha[z]);
+
+				}
+				i++;
+				s = f.nextLine();
+			}
+
+			f.close();
+
+			this.d = E;
+
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+
+	}
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		String entrada = "..\\ACO\\src\\Testes\\brazil27.tsp";
-		String saidaPopulacao = "..\\ACO\\src\\Testes\\saidaPopulacao.txt";
-		String saidaMelhorGlobal = "..\\ACO\\src\\Testes\\saidaMelhorGlobal.txt";
-		ACO aco = new ACO(1, 6, 0.1, 0.2, 1000, 20000, entrada, saidaPopulacao, saidaMelhorGlobal);
-		aco.iniciar();
+
+		double[] alfa = { 1, 0.5, 0.01};
+		double[] beta = { 6, 3, 1};
+		double[] q = { 0.5, 1, 0.01};
+		double[] ro = { 0.2, 0.1, 0.05};
+		int[] tamColonia = { 58 };
+		int[] iteracoes = { 2000 };
+		//0 - roleta, 1 - torneio
+		int[] selecao = {0, 1};
+		String[] problema = { "brazil27", "brazil58" };			
+		for (int pr = 0; pr < problema.length; pr++) {
+			for (int se = 0; se < selecao.length; se++) {	
+			for (int i = 0; i < alfa.length; i++) {
+				for (int j = 0; j < beta.length; j++) {
+					for (int j2 = 0; j2 < q.length; j2++) {
+						for (int k = 0; k < ro.length; k++) {
+							for (int k2 = 0; k2 < tamColonia.length; k2++) {
+								for (int l = 0; l < iteracoes.length; l++) {
+									String entrada = "..\\ACO_NOVO\\src\\Testes\\" + problema[pr] + ".tsp";
+									String saidaPopulacao = "..\\ACO_NOVO\\src\\Testes\\Testes_execucoes_" + problema[pr]
+											+ "_saidaPopulacao tamColonia-" + tamColonia[k2] + "_iteracoes-"
+											+ iteracoes[l] + "_selecao-"+ selecao[se] + "_alfa-" + alfa[i] + "_beta-" + beta[j] + "_feromonio-"
+											+ q[j2] + "_ro-" + ro[k] + ".txt";
+									String saidaMelhorGlobal = "..\\ACO_NOVO\\src\\Testes\\Testes_execucoes_" + problema[pr]
+											+ "_saidaMelhorGlobal tamColonia-" + tamColonia[k2] + "_iteracoes-"
+											+ iteracoes[l] + "_selecao-"+ selecao[se] + "_alfa-" + alfa[i] + "_beta-" + beta[j] + "_feromonio-"
+											+ q[j2] + "_ro-" + ro[k] + ".txt";
+
+									ACO aco = new ACO(alfa[i], beta[j], q[j2], ro[k], tamColonia[k2],
+											iteracoes[l], selecao[se], entrada, saidaPopulacao, saidaMelhorGlobal);
+									
+									System.out.print("\n\nTeste\t" + problema[pr]
+											+ "\ttamColonia\t" + tamColonia[k2] + "\titeracoes\t"
+											+ iteracoes[l] + "\tselecao\t"+ selecao[se] + "\talfa\t" + alfa[i] + "\tbeta\t" + beta[j] + "\tQ\t"
+											+ q[j2] + "\tro\t" + ro[k]+"\t");
+									
+									aco.iniciar();
+								}
+							}
+						}
+					}
+					}
+				}
+			}
+		}
 	}
 
 }
