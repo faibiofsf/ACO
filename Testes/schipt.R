@@ -1,3 +1,4 @@
+library(stringr)
 alfa <- c(1)
 beta <- c(6)
 q <- c(0.5,1,0.01)
@@ -17,7 +18,8 @@ for(i in alfa){
 						for(o in selecao){
 							for(p in problema){
 								for(ps in pobSelecaoAleatoria){
-									t <- str_c(i,j,k,l,m,n,o,p,ps)
+									t <- str_c(i," ",j, 
+ " ", k, " ", l,  " " ,m, " "  ,n, " "  ,o," "  , p,  " "   , ps)
 									print(t)
 								}		
 							}
