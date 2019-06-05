@@ -26,7 +26,8 @@ public class ACO {
 	private Random random;
 
 	public ACO(double alfa, double beta, double qk, double ro, int numeroFormigas, int numeroIteracoes, int selecao,
-			double probSelecaoAleatoria, String entrada, String saidaPopulacao, String saidaMelhorGlobal, String saidaDiversidade) {
+			double probSelecaoAleatoria, String entrada, String saidaPopulacao, String saidaMelhorGlobal,
+			String saidaDiversidade) {
 		if (entrada.contains("brazil27")) {
 			this.iniciarAmbienteBrazil27(entrada);
 		} else
@@ -119,13 +120,13 @@ public class ACO {
 
 			// Pior Formiga colonia
 			textoPiorFormigaPopulacao[iteracao] = String.format("%.2f", colonia.get(colonia.size() - 1).getLk());
-			
-			textoDiversidade[iteracao] = iteracao+"\t"+ this.calculaDiversidade();
 
-			colonia.clear();			
-			
+			textoDiversidade[iteracao] = iteracao + "\t" + this.calculaDiversidade();
+
+			colonia.clear();
+
 			iteracao++;
-			
+
 		}
 
 		System.out.println(textoMelhorGlobal[textoMelhorGlobal.length - 1]);
@@ -138,15 +139,15 @@ public class ACO {
 			gravarArqPopulacao.println(i + "\t" + textoMelhorFormigaPopulacao[i] + "\t" + textoMediaPopulacao[i] + "\t"
 					+ textoPiorFormigaPopulacao[i]);
 		}
-		
+
 		for (String txDiversidade : textoDiversidade) {
 			gravarArqSaidaDiversidade.println(txDiversidade);
 		}
-		
+
 		/*
 		 * for (int i = 0; i < feromonio.length; i++) { for (int j = 0; j <
-		 * feromonio.length; j++) { gravarArqPopulacao.printf(feromonio[i][j] + "\t"); }
-		 * gravarArqPopulacao.printf("\n"); }
+		 * feromonio.length; j++) { gravarArqPopulacao.printf(feromonio[i][j] +
+		 * "\t"); } gravarArqPopulacao.printf("\n"); }
 		 */
 
 		try {
@@ -164,21 +165,21 @@ public class ACO {
 	}
 
 	private double calculaDiversidade() {
-		
+
 		double diversidade = 0.0;
-		
+
 		for (int i = 0; i < this.colonia.size(); i++) {
 			for (int j = 0; j < this.colonia.size(); j++) {
-				if(i!=j) {
-					double distancia = this.colonia.get(i).getLk()-this.colonia.get(j).getLk();
+				if (i != j) {
+					double distancia = this.colonia.get(i).getLk() - this.colonia.get(j).getLk();
 					diversidade += (distancia < 0) ? -distancia : distancia;
 				}
 			}
 		}
-		
-		return diversidade/(this.colonia.size()-1);
+
+		return diversidade / (this.colonia.size() - 1);
 	}
-	
+
 	private void criaRota(Formiga formiga) {
 		for (int posicao = 0; posicao < formiga.getSk().length - 1; posicao++) {
 
@@ -190,10 +191,18 @@ public class ACO {
 				cidadesSelecionadasK[cidadeJ] = true;
 				this._aVisitar.remove(new Integer(cidadeJ));
 			} else {
-				//Probabilidade de selecionar a cidade de forma aleatoria
-				if (random.nextDouble() < this.probSelecaoAleatoria) {
-					cidadeJ = this._aVisitar.get(random.nextInt(this._aVisitar.size()));
-				} else {
+				// Probabilidade de selecionar a cidade de forma aleatoria
+				if (this.probSelecaoAleatoria > 0) {
+					if (random.nextDouble() < this.probSelecaoAleatoria) {
+						cidadeJ = this._aVisitar.get(random.nextInt(this._aVisitar.size()));
+					} else {
+						if (this.selecao == 0) {
+							cidadeJ = this.selecionaCidadeJRoleta(formiga, posicao);
+						} else if (this.selecao == 1) {
+							cidadeJ = this.selecionaCidadeJTorneio(formiga, posicao);
+						}
+					}
+				}else{
 					if (this.selecao == 0) {
 						cidadeJ = this.selecionaCidadeJRoleta(formiga, posicao);
 					} else if (this.selecao == 1) {
@@ -504,15 +513,15 @@ public class ACO {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-		double[] alfa = { 1};
-		double[] beta = { 6};
-		double[] q = { 0.5, 1, 0.01 };
-		double[] ro = { 0.2, 0.1, 0.05 };
+		double[] alfa = { 1, 0.5, 0.01};
+		double[] beta = { 6, 3, 1};
+		double[] q = { 0.5, 1, 0.01};
+		double[] ro = { 0.2, 0.1, 0.05};
 		int[] tamColonia = { 58 };
 		int[] iteracoes = { 2000 };
-		// 0 - roleta, 1 - torneio
-		int[] selecao = { 0 };
-		String[] problema = { "brazil27", "brazil58" };
+		//0 - roleta, 1 - torneio
+		int[] selecao = {0, 1};
+		String[] problema = { "brazil27", "brazil58" };	
 		// Probabilidade de selecionar uma cidade de forma aleatorioa
 		double[] pobSelecaoAleatoria = { 0, 0.01 };
 		for (int sa = 0; sa < pobSelecaoAleatoria.length; sa++) {
@@ -524,18 +533,18 @@ public class ACO {
 								for (int k = 0; k < ro.length; k++) {
 									for (int k2 = 0; k2 < tamColonia.length; k2++) {
 										for (int l = 0; l < iteracoes.length; l++) {
-											String entrada = "..\\ACO\\src\\Testes\\" + problema[pr] + ".tsp";
-											String saidaPopulacao = "..\\ACO\\src\\Testes\\Testes_execucoes_"
+											String entrada = "..\\ACO_NOVO\\src\\Testes\\" + problema[pr] + ".tsp";
+											String saidaPopulacao = "..\\ACO_NOVO\\src\\Testes\\Testes_execucoes_"
 													+ problema[pr] + "_saidaPopulacao tamColonia-" + tamColonia[k2]
 													+ "_iteracoes-" + iteracoes[l] + "_selecao-" + selecao[se]
 													+ "_alfa-" + alfa[i] + "_beta-" + beta[j] + "_feromonio-" + q[j2]
 													+ "_ro-" + ro[k] + "_SA-" + pobSelecaoAleatoria[sa] + ".txt";
-											String saidaMelhorGlobal = "..\\ACO\\src\\Testes\\Testes_execucoes_"
+											String saidaMelhorGlobal = "..\\ACO_NOVO\\src\\Testes\\Testes_execucoes_"
 													+ problema[pr] + "_saidaMelhorGlobal tamColonia-" + tamColonia[k2]
 													+ "_iteracoes-" + iteracoes[l] + "_selecao-" + selecao[se]
 													+ "_alfa-" + alfa[i] + "_beta-" + beta[j] + "_feromonio-" + q[j2]
 													+ "_ro-" + ro[k] + "_SA-" + pobSelecaoAleatoria[sa] + ".txt";
-											String saidaDiversidade = "..\\ACO\\src\\Testes\\Saida_Diversidade_"
+											String saidaDiversidade = "..\\ACO_NOVO\\src\\Testes\\Saida_Diversidade_"
 													+ problema[pr] + "_saidaMelhorGlobal tamColonia-" + tamColonia[k2]
 													+ "_iteracoes-" + iteracoes[l] + "_selecao-" + selecao[se]
 													+ "_alfa-" + alfa[i] + "_beta-" + beta[j] + "_feromonio-" + q[j2]
