@@ -10,30 +10,37 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Scanner;
 
-public class ACO {
+public class AntSystem {
 
 	private double[][] d;
 	private double[][] feromonio;
 	private double[][] dividendosProbabilidades;
-	private double alfa, beta, Qk, ro, probSelecaoAleatoria;
+	private double alfa, alfatemp, beta, betatemp, Qk, ro, probSelecaoAleatoria;
 	private ArrayList<Formiga> colonia;
-	private ArrayList<Integer> _aVisitar;
+	private ArrayList<Integer> cidadesAVisitar;
 	private Formiga melhorFormiga;
 	private int numeroFormigas, numeroIteracoes, selecao;
 	boolean[] cidadesSelecionadasK;
 	private FileWriter arqPopulacao, arqMelhorGlobal, arqSaidaDiversidade;
 	private PrintWriter gravarArqPopulacao, gravarArqMelhorGlobal, gravarArqSaidaDiversidade;
 	private Random random;
+	public String saida;
 
-	public ACO(double alfa, double beta, double qk, double ro, int numeroFormigas, int numeroIteracoes, int selecao,
+	public AntSystem(double alfa, double beta, double qk, double ro, int numeroFormigas, int numeroIteracoes, int selecao,
 			double probSelecaoAleatoria, String entrada, String saidaPopulacao, String saidaMelhorGlobal,
 			String saidaDiversidade) {
-		if (entrada.contains("brazil27")) {
-			this.iniciarAmbienteBrazil27(entrada);
-		} else
+		if (entrada.contains("brazil27") || entrada.contains("bays29")) {
+			this.iniciarAmbienteFullMatrix(entrada);
+		} else if (entrada.contains("att532")) {
+			this.iniciarAmbienteCoordAtt(entrada);
+		}else if (entrada.contains("pcb1173") || entrada.contains("eil76") || entrada.contains("kroA100")) {
+			this.iniciarAmbienteCoordEuc_2d(entrada);
+		}else
 			this.iniciarAmbiente(entrada);
 		this.alfa = alfa;
+		this.alfatemp = alfa;
 		this.beta = beta;
+		this.betatemp	 = beta;
 		this.Qk = qk;
 		this.ro = ro;
 		this.numeroFormigas = numeroFormigas;
@@ -52,7 +59,7 @@ public class ACO {
 		this.gravarArqPopulacao = new PrintWriter(arqPopulacao);
 		this.gravarArqMelhorGlobal = new PrintWriter(arqMelhorGlobal);
 		this.gravarArqSaidaDiversidade = new PrintWriter(arqSaidaDiversidade);
-		random = new Random(12345);
+		random = new Random();//12345);
 		this.probSelecaoAleatoria = probSelecaoAleatoria;
 	}
 
@@ -79,9 +86,9 @@ public class ACO {
 					caminhoFormigak[j] = -1;
 				}
 
-				this._aVisitar = new ArrayList<Integer>();
+				this.cidadesAVisitar = new ArrayList<Integer>();
 				for (int i = 0; i < this.d.length; i++) {
-					this._aVisitar.add(new Integer(i));
+					this.cidadesAVisitar.add(new Integer(i));
 				}
 
 				cidadesSelecionadasK = new boolean[d.length];
@@ -93,7 +100,7 @@ public class ACO {
 					this.criaRotaAleatoria(formiga);
 				} else {
 					// Cria a rota da formiga e atualiza a distancia
-					this.criaRota(formiga);
+					this.criaRota(formiga, k);
 				}
 
 				colonia.add(formiga);
@@ -120,17 +127,53 @@ public class ACO {
 
 			// Pior Formiga colonia
 			textoPiorFormigaPopulacao[iteracao] = String.format("%.2f", colonia.get(colonia.size() - 1).getLk());
+			
+			double diversidade = this.calculaDiversidadePeloPheromoneRatio();
 
-			textoDiversidade[iteracao] = iteracao + "\t" + this.calculaDiversidade();
+			/*if(diversidade <= 30 ){
+				beta = 0;
+			}
+			else if(diversidade >= 57) {
+				beta = betatemp;
+			}*/
+			
+			textoDiversidade[iteracao] = iteracao + "\t" +diversidade ;//this.calculaDiversidadePelaSomaDistancias();
 
 			colonia.clear();
 
 			iteracao++;
 
 		}
+		/*int ci = 0;
+		ArrayList<Integer> cidades = new ArrayList();
+		cidades.add(0);
+		System.out.print(ci+",");
+		for (int i = 0; i < this.feromonio.length; i++) {
+			int cj = -1;
+			double maxefero = 0.0;
+			for (int j = 0; j < this.feromonio.length; j++) {
+				if(this.feromonio[ci][j] > maxefero && !cidades.contains(j)){
+					maxefero = this.feromonio[ci][j];
+					cj = j;
+				}
+			}
+			
+			ci = cj;
+			cidades.add(ci);
+			System.out.print(cj+",");
+			
+		}*/
 
-		System.out.println(textoMelhorGlobal[textoMelhorGlobal.length - 1]);
+		//System.out.print("\t");
+		
+		saida = textoMelhorGlobal[textoMelhorGlobal.length - 1]+"\t";
+		
+		for (int cid : melhorFormiga.getSk()) {
+			saida+=cid+",";
+		}
 
+		System.out.println(saida);
+		
 		for (String mFormiga : textoMelhorGlobal) {
 			gravarArqMelhorGlobal.println(mFormiga);
 		}
@@ -164,7 +207,7 @@ public class ACO {
 
 	}
 
-	private double calculaDiversidade() {
+	private double calculaDiversidadePelaSomaDistancias() {
 
 		double diversidade = 0.0;
 
@@ -177,24 +220,56 @@ public class ACO {
 			}
 		}
 
-		return diversidade / (this.colonia.size() - 1);
+		return diversidade / (this.colonia.size()^2);
 	}
 
-	private void criaRota(Formiga formiga) {
+	private double calculaDiversidadePeloPheromoneRatio(){
+		
+		double numeroArestasComFeromonio = 0.0;
+		
+		double numeroArestas = 0.0; 
+		
+		double[][] razao = new double[this.feromonio.length][this.feromonio[0].length]; 
+		
+		for (int i = 0; i < this.feromonio.length; i++) {
+			double soma = 0.0;
+			for (int j = 0; j < this.feromonio[0].length; j++) {
+				if(this.getDistancia(i, j) < 1000000000){
+					numeroArestas++;
+					soma+=this.feromonio[i][j];
+				}
+			}
+			
+			for (int j = 0; j < this.feromonio[0].length; j++) {
+				if(this.getDistancia(i, j) < 1000000000){
+					razao[i][j] = 100*(this.feromonio[i][j]/soma);
+					double r = 100*(1/(double)this.feromonio.length);
+					if(razao[i][j] > r){
+						numeroArestasComFeromonio++;
+					}
+				}
+			}
+			
+		}		
+		
+		return 100*(numeroArestasComFeromonio/numeroArestas);
+	}
+	
+	private void criaRota(Formiga formiga, int k) {
 		for (int posicao = 0; posicao < formiga.getSk().length - 1; posicao++) {
 
 			int cidadeJ = -1;
 
 			if (posicao == 0) {
-				cidadeJ = this._aVisitar.get(random.nextInt(this._aVisitar.size()));
+				cidadeJ = this.cidadesAVisitar.get(k);//random.nextInt(this.cidadesAVisitar.size()));
 				formiga.setCidade(posicao, cidadeJ);
 				cidadesSelecionadasK[cidadeJ] = true;
-				this._aVisitar.remove(new Integer(cidadeJ));
+				this.cidadesAVisitar.remove(new Integer(cidadeJ));
 			} else {
 				// Probabilidade de selecionar a cidade de forma aleatoria
 				if (this.probSelecaoAleatoria > 0) {
 					if (random.nextDouble() < this.probSelecaoAleatoria) {
-						cidadeJ = this._aVisitar.get(random.nextInt(this._aVisitar.size()));
+						cidadeJ = this.cidadesAVisitar.get(random.nextInt(this.cidadesAVisitar.size()));
 					} else {
 						if (this.selecao == 0) {
 							cidadeJ = this.selecionaCidadeJRoleta(formiga, posicao);
@@ -212,7 +287,7 @@ public class ACO {
 
 				formiga.setCidade(posicao, cidadeJ);
 				cidadesSelecionadasK[cidadeJ] = true;
-				this._aVisitar.remove(new Integer(cidadeJ));
+				this.cidadesAVisitar.remove(new Integer(cidadeJ));
 				// Calcular a distancia entre o elemento na posiÃ§Ã£o
 				// anterior e o
 				// elemento inserido na posiÃ§Ã£o atual
@@ -231,10 +306,10 @@ public class ACO {
 		for (int posicao = 0; posicao < formiga.getSk().length - 1; posicao++) {
 
 			int cidadeJ = -1;
-			cidadeJ = this._aVisitar.get(random.nextInt(this._aVisitar.size()));
+			cidadeJ = this.cidadesAVisitar.get(random.nextInt(this.cidadesAVisitar.size()));
 			formiga.setCidade(posicao, cidadeJ);
 			cidadesSelecionadasK[cidadeJ] = true;
-			this._aVisitar.remove(new Integer(cidadeJ));
+			this.cidadesAVisitar.remove(new Integer(cidadeJ));
 			if (posicao > 0) {
 				formiga.setLk(formiga.getLk() + d[formiga.getSk()[posicao - 1]][posicao]);
 			}
@@ -261,6 +336,7 @@ public class ACO {
 		for (int i = 0; i < feromonio.length; i++) {
 			for (int j = 0; j < feromonio[i].length; j++) {
 				feromonio[i][j] = ((1 - p) * feromonio[i][j]) + delta[i][j];
+				feromonio[i][j] += 10e-100;
 			}
 		}
 	}
@@ -303,7 +379,7 @@ public class ACO {
 		// Seleciona somente as que nao foram escolhidas
 
 		double somatorioProbabilidades = 0.0;
-		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
+		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this.cidadesAVisitar.clone();
 		while (!aVisitar.isEmpty()) {
 			int j = (int) aVisitar.remove(0);
 			double prob = getProbabilidade(i, j);
@@ -332,7 +408,7 @@ public class ACO {
 		// Seleciona somente as que nao foram escolhidas
 
 		double somatorioProbabilidades = 0.0;
-		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
+		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this.cidadesAVisitar.clone();
 		ArrayList<Integer> aEscolherAleatorio = new ArrayList<Integer>();
 		int tamanhoAVisitar = aVisitar.size();
 		int tamanhoTorneio = (aVisitar.size() * 0.1) < 4 ? 4 : (int) (aVisitar.size() * 0.1);
@@ -343,16 +419,16 @@ public class ACO {
 		}
 
 		// double feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(0));
-		double dividendo = this.dividendoProbCidade(i, aEscolherAleatorio.get(0));
+		double dividendo = this.atratividadeClassicaDaAresta(i, aEscolherAleatorio.get(0));
 
 		escolhida = aEscolherAleatorio.get(0);
 
 		for (int j = 0; j < aEscolherAleatorio.size(); j++) {
 			// if(feromonioC > this.getFeromonio(i, aEscolherAleatorio.get(j)))
 			// {
-			if (dividendo > this.dividendoProbCidade(i, aEscolherAleatorio.get(j))) {
+			if (dividendo > this.atratividadeClassicaDaAresta(i, aEscolherAleatorio.get(j))) {
 				// feromonioC = this.getFeromonio(i, aEscolherAleatorio.get(j));
-				dividendo = this.dividendoProbCidade(i, aEscolherAleatorio.get(j));
+				dividendo = this.atratividadeClassicaDaAresta(i, aEscolherAleatorio.get(j));
 				escolhida = aEscolherAleatorio.get(j);
 			}
 		}
@@ -375,16 +451,16 @@ public class ACO {
 	private void atualizaSomatorio(int i) {
 		somatorio = 0;
 
-		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this._aVisitar.clone();
+		ArrayList<Integer> aVisitar = (ArrayList<Integer>) this.cidadesAVisitar.clone();
 		while (!aVisitar.isEmpty()) {
 			int j = (int) aVisitar.remove(0);
-			somatorio += dividendoProbCidade(i, j);
+			somatorio += atratividadeClassicaDaAresta(i, j);
 		}
 
 	}
 
 	// calcula os dividendos
-	private double dividendoProbCidade(int i, int j) {
+	private double atratividadeClassicaDaAresta(int i, int j) {
 		dividendosProbabilidades[i][j] = Math.pow(feromonio[i][j], this.alfa) * Math.pow(1 / d[i][j], this.beta);
 		return dividendosProbabilidades[i][j];
 	}
@@ -462,8 +538,116 @@ public class ACO {
 
 	}
 
+	private void iniciarAmbienteCoordAtt(String path){
+		try {
+			
+			//double[][] E = new double[281][2];
+			Scanner f = new Scanner(new File(path));
+			String s = f.next();
+			String p = s.split(" ")[0];
+			while((p.length() != 10)){
+				s = f.nextLine();
+				p = s.split(" ")[0];
+			}
+			
+			int dimensao = Integer.parseInt(s.split(" ")[1]);
+			
+			while(!s.contains("NODE_COORD_SECTION")){
+				s = f.nextLine();
+			}
+			ArrayList<double[]> lista = new ArrayList<double[]>();
+			s = f.next();
+			while(f.hasNext() && (!s.equals("EOF") && !s.equals("eof"))){
+				double x = f.nextDouble();
+				double y = f.nextDouble();
+				lista.add(new double[]{x,y});
+				s = f.next();
+			}
+			
+			double[][] E = new double[dimensao][dimensao];
+			
+			for (int i = 0; i < E.length; i++) {
+				for (int j = 0; j < i; j++) {
+				
+					double xd = lista.get(i)[0] - lista.get(j)[0];
+					double yd = lista.get(i)[1] - lista.get(j)[1];
+					double rij = Math.sqrt((xd*xd + yd*yd)/10);
+					double tij = (int) rij;
+					double dij = (tij < rij) ? tij + 1 : tij;
+					
+					E[i][j] = dij;
+					E[j][i] = dij;
+					
+				}
+			}
+			
+			f.close();
+			
+			this.d = E;
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void iniciarAmbienteCoordEuc_2d(String path){
+		try {
+			
+			int dimensao = 0;
+			Scanner f = new Scanner(new File(path));
+			String s = f.nextLine();
+
+			while (!s.contains("DIMENSION: ")) {
+				s = f.nextLine();
+			}
+			dimensao = Integer.parseInt(s.split(" ")[1]);
+			
+			while(!s.contains("NODE_COORD_SECTION")){
+				s = f.nextLine();
+			}
+			ArrayList<double[]> lista = new ArrayList<double[]>();
+			s = f.next();
+			while(f.hasNext() && (!s.equals("EOF") && !s.equals("eof"))){
+				double x = f.nextDouble();
+				double y = f.nextDouble();
+				lista.add(new double[]{x,y});
+				s = f.next();
+			}
+			
+			double[][] E = new double[dimensao][dimensao];
+			
+			for (int i = 0; i < E.length; i++) {
+				for (int j = 0; j < i; j++) {
+				
+					double xd = Math.abs(lista.get(i)[0] - lista.get(j)[0]);
+					double yd = Math.abs(lista.get(i)[1] - lista.get(j)[1]);
+					double dij = (int)(Math.sqrt( xd*xd + yd*yd));
+			
+					E[i][j] = dij;
+					E[j][i] = dij;
+					
+				}
+			}
+			
+			f.close();
+			
+			this.d = E;
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	// Realiza aleitura do arquivo do tsp com as distÃƒÂ¢ncias
-	private void iniciarAmbienteBrazil27(String path) {
+	private void iniciarAmbienteFullMatrix(String path) {
 		try {
 
 			double[][] E;
@@ -485,7 +669,7 @@ public class ACO {
 
 			int i = 0;
 			s = f.nextLine();
-			while (f.hasNext() && (!s.equals("EOF") || !s.equals("eof"))) {
+			while (f.hasNext() && (!s.equals("EOF") && !s.equals("eof"))) {
 
 				String[] linha = s.split(" ");
 				for (int z = 0; z < linha.length; z++) {
@@ -513,19 +697,36 @@ public class ACO {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-		double[] alfa = { 1, 0.5, 0.01};
-		double[] beta = { 6, 3, 1};
-		double[] q = { 0.5, 1, 0.01};
-		double[] ro = { 0.2, 0.1, 0.05};
+		FileWriter arqSaidas;
+		try {		
+		
+		double[] alfa = { 1};
+		double[] beta = { 5};
+		double[] q = { 0.5};
+		double[] ro = { 0.2};
 		int[] tamColonia = { 58 };
-		int[] iteracoes = { 2000 };
+		int[] iteracoes = { 5000 };
 		//0 - roleta, 1 - torneio
-		int[] selecao = {0, 1};
-		String[] problema = { "brazil27", "brazil58" };	
+		int[] selecao = {0};
+		String[] problema = { "bays29","eil76", "brazil58", "kroA100"};//, "att532", "d1291" };	
 		// Probabilidade de selecionar uma cidade de forma aleatorioa
-		double[] pobSelecaoAleatoria = { 0, 0.01 };
+		double[] pobSelecaoAleatoria = { 0};
+		
+		int numeroExecucoes = 50;
+		
 		for (int sa = 0; sa < pobSelecaoAleatoria.length; sa++) {
 			for (int pr = 0; pr < problema.length; pr++) {
+				
+				if(problema[pr].equals("att532")) tamColonia[0] = 532;
+				else if(problema[pr].equals("d1291")) tamColonia[0] = 1291;
+				else if(problema[pr].equals("eil76")) tamColonia[0] = 76;
+				else if(problema[pr].equals("kroA100")) tamColonia[0] = 100;
+				else if(problema[pr].equals("bays29")) tamColonia[0] = 29;
+				else if(problema[pr].equals("brazil58")) tamColonia[0] = 58;
+				
+				arqSaidas = new FileWriter("..\\ACO_NOVO\\src\\Testes\\Execs\\saida_testes_" + problema[pr] + ".txt");
+				PrintWriter saida = new PrintWriter(arqSaidas);
+				
 				for (int se = 0; se < selecao.length; se++) {
 					for (int i = 0; i < alfa.length; i++) {
 						for (int j = 0; j < beta.length; j++) {
@@ -533,34 +734,46 @@ public class ACO {
 								for (int k = 0; k < ro.length; k++) {
 									for (int k2 = 0; k2 < tamColonia.length; k2++) {
 										for (int l = 0; l < iteracoes.length; l++) {
+											//Numero de Execucoes
+											for (int l2 = 0; l2 < numeroExecucoes; l2++) {											
+											
 											String entrada = "..\\ACO_NOVO\\src\\Testes\\" + problema[pr] + ".tsp";
-											String saidaPopulacao = "..\\ACO_NOVO\\src\\Testes\\Testes_execucoes_"
+											String saidaPopulacao = "..\\ACO_NOVO\\src\\Testes\\Execs\\Testes_"+l2+"execucao_"
 													+ problema[pr] + "_saidaPopulacao tamColonia-" + tamColonia[k2]
 													+ "_iteracoes-" + iteracoes[l] + "_selecao-" + selecao[se]
 													+ "_alfa-" + alfa[i] + "_beta-" + beta[j] + "_feromonio-" + q[j2]
 													+ "_ro-" + ro[k] + "_SA-" + pobSelecaoAleatoria[sa] + ".txt";
-											String saidaMelhorGlobal = "..\\ACO_NOVO\\src\\Testes\\Testes_execucoes_"
+											String saidaMelhorGlobal = "..\\ACO_NOVO\\src\\Testes\\Execs\\Testes_"+l2+"execucao_"
 													+ problema[pr] + "_saidaMelhorGlobal tamColonia-" + tamColonia[k2]
 													+ "_iteracoes-" + iteracoes[l] + "_selecao-" + selecao[se]
 													+ "_alfa-" + alfa[i] + "_beta-" + beta[j] + "_feromonio-" + q[j2]
 													+ "_ro-" + ro[k] + "_SA-" + pobSelecaoAleatoria[sa] + ".txt";
-											String saidaDiversidade = "..\\ACO_NOVO\\src\\Testes\\Saida_Diversidade_"
+											String saidaDiversidade = "..\\ACO_NOVO\\src\\Testes\\Execs\\SaidaDiversidade_"+l2+"execucao_"
 													+ problema[pr] + "_saidaMelhorGlobal tamColonia-" + tamColonia[k2]
 													+ "_iteracoes-" + iteracoes[l] + "_selecao-" + selecao[se]
 													+ "_alfa-" + alfa[i] + "_beta-" + beta[j] + "_feromonio-" + q[j2]
 													+ "_ro-" + ro[k] + "_SA-" + pobSelecaoAleatoria[sa] + ".txt";
 
-											ACO aco = new ACO(alfa[i], beta[j], q[j2], ro[k], tamColonia[k2],
+											AntSystem aco = new AntSystem(alfa[i], beta[j], q[j2], ro[k], tamColonia[k2],
 													iteracoes[l], selecao[se], pobSelecaoAleatoria[sa], entrada,
 													saidaPopulacao, saidaMelhorGlobal, saidaDiversidade);
 
-											System.out.print("Teste\t" + problema[pr] + "\ttamColonia\t"
+											
+											
+											String texto = "Teste\t"+l2+"\texecucao\t" + problema[pr] + "\ttamColonia\t"
 													+ tamColonia[k2] + "\titeracoes\t" + iteracoes[l] + "\tselecao\t"
 													+ selecao[se] + "\talfa\t" + alfa[i] + "\tbeta\t" + beta[j]
 													+ "\tQ\t" + q[j2] + "\tro\t" + ro[k] + "\tSA\t"
-													+ pobSelecaoAleatoria[sa] + "\t");
-
+													+ pobSelecaoAleatoria[sa] + "\t";
+											
+											System.out.print(texto);
+											
+											saida.print(texto);
+											
 											aco.iniciar();
+											
+											saida.println(aco.saida);
+											}
 										}
 									}
 								}
@@ -568,7 +781,14 @@ public class ACO {
 						}
 					}
 				}
+				arqSaidas.close();
+				saida.close();
 			}
+		}
+		
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
